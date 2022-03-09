@@ -1,0 +1,33 @@
+#!/usr/bin/env bpftrace
+
+/*
+ * Trace block IO latency using kprobes.
+ * prints a histogram of the block IO latency in a log2 histogram:      @latency_hist = hist()
+ * Also prints total number of block IOs executed:                      @total_block_io
+ * Prints the block IOs divided by process name:                        @count_io[comm]
+ * Based on Brendan Gregg's bpftrace
+ */
+
+BEGIN
+{
+	printf("block_io_latency | Hit Ctrl-C to end.\n");
+}
+
+kprobe:blk_account_io_start
+{
+	@start[arg0] = nsecs;
+}
+
+kprobe:blk_account_io_done
+/@start[arg0]/
+{
+	@usecs = hist((nsecs - @start[arg0]) / 1000);
+	@count_io[comm] = count();
+    @total_block_io = count();
+	delete(@start[arg0]);
+}
+
+END
+{
+	clear(@start);
+}

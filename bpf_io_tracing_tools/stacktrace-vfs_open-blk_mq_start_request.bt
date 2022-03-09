@@ -1,0 +1,19 @@
+#!/usr/bin/env bpftrace
+
+BEGIN
+{
+	printf("Tracing block I/O with init stacks. Hit Ctrl-C to end.\n");
+}
+
+kprobe:submit_bio
+{
+	@reqstack[arg0] = kstack;
+	@reqts[arg0] = nsecs;
+}
+
+END
+{
+    print(@reqstack);
+    clear(@reqts);
+	clear(@reqstack);
+}

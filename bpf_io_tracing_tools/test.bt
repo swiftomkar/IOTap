@@ -1,0 +1,18 @@
+#!/usr/bin/env bpftrace
+#include <linux/blk_types.h>
+#include <linux/dcache.h>
+#include <linux/genhd.h>
+#include <linux/blkdev.h>
+
+
+/*kprobe:submit_bio
+{
+	printf("bio->bi_opf: %s\n", ((struct bio *)arg0)->bi_disk->disk_name);
+}
+*/
+tracepoint:block:block_rq_issue
+{
+    //printf("%d\n", args->sector);
+    @sectors[args->sector]++;
+    @histo = lhist(@sectors[args->sector], 0, 10000, 200);
+}

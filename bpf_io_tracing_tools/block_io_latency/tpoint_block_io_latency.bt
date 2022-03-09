@@ -1,0 +1,36 @@
+#!/usr/bin/env bpftrace
+
+/*
+ * Trace block IO latency using tracepoints only.
+ * prints a histogram of the block IO latency in a log2 histogram:      @latency_hist = hist()
+ * Also prints total number of block IOs executed:                      @total_block_io
+ * Prints the block IOs divided by process name:                        @count_io[comm]
+ */
+BEGIN
+{
+	printf("biocount | Hit Ctrl-C to end.\n");
+	//printf()
+}
+
+tracepoint:block:block_rq_issue
+{
+    @start_time[args->dev, args->sector] = nsecs;
+}
+
+tracepoint:block:block_rq_complete
+/@start_time[args->dev, args->sector]/
+{
+    @latency_hist = hist((nsecs - @start_time[args->dev, args->sector]) / 1000);
+    @count_io[comm] = count();
+    @total_block_io = count();
+
+    delete(@start_time[args->dev, args->sector]);
+
+}
+
+END
+{
+    // print(@usecs);
+	clear(@start_time);
+
+}

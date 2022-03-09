@@ -1,0 +1,30 @@
+#!/usr/bin/env bpftrace
+
+// Omkar Desai
+// Syracuse Sustainable Storage Systems Lab
+
+#include "linux/blkdev.h"
+
+BEGIN
+{
+    printf("avg_blk_io_size.bt\n");
+}
+kprobe:blk_mq_start_request
+{
+    @comm_seperated_blk_io_size[comm] = avg(((struct request *)arg0)->__data_len);
+
+}
+
+kprobe:blk_mq_start_request
+{
+    @syswide_avg_blk_io_size["placeholder"] = avg(((struct request *)arg0)->__data_len);
+}
+
+END
+{
+    print(@comm_seperated_blk_io_size);
+    print(@syswide_avg_blk_io_size);
+
+    clear(@comm_seperated_blk_io_size);
+    clear(@syswide_avg_blk_io_size);
+}

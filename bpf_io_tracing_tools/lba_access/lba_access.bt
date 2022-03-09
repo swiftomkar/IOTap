@@ -1,0 +1,10 @@
+#!/usr/bin/env bpftrace
+
+#include <linux/blkdev.h>
+
+
+tracepoint:block:block_rq_issue
+{
+    @sectors[args->sector]++;
+    @histo = lhist(@sectors[args->sector], 0, 10000, 200);
+}
